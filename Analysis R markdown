@@ -11,10 +11,6 @@ library(biomaRt)
 ```
 
 ```{r}
-#gene_exp_counts <- read.table("C:/Users/student/Downloads/bme 4350/gene_matrix.txt", header=TRUE)
-
-#fpkm <- read.table("C:/Users/hanna/Downloads/bme 4350/fpkm.txt", header=TRUE)
-
 tpm <- read.table("C:/Users/student/Downloads/tpm (2).txt", header=TRUE)
 tpm = tpm[,c(1,7,8,9,10,11,12,13,14,15,2,3,4,5,6,19,20,21,22,23,24,25,26,27,16,17,18)]
 
@@ -26,10 +22,7 @@ duplicates = as.data.frame(duplicates)
 
 hgnc_symbols = hgnc_symbols[-which(duplicates$duplicates==TRUE),]
 tpm = merge(tpm, hgnc_symbols, by.x="geneID", by.y="ensembl_gene_id_version", all=TRUE)
-
 tpm1 <- tpm[-which(tpm[,c(2:27)]  ==  0), ]
-
-
 ```
 
 
@@ -42,7 +35,6 @@ myplclust(h_cluster, labels=h_cluster$labels, lab.col=colors, hang=0.1)
 
 
 legend("bottomright", legend = c("Alzheimer's Disease", "No Cognitive Impairment"), col = c("red", "blue"), pch = 15, pt.cex = 1, cex = 0.7,  bty = "n")
-
 ```
 
 ```{r}
@@ -74,9 +66,7 @@ cat("Percentage of variation explanation by PC2: ", PC2, "%\n")
 
 #REMOVE NUMERICAL OUTLIERS
 ```{r}
-
 tpm_no_outlier = tpm1[,-c(8,17,24)]
-
 ```
 
 
@@ -88,8 +78,6 @@ colors = c(rep(c("Alzheimer's Disease" = "red"), time = 13), rep(c("No Cognitive
 myplclust(h_cluster, labels=h_cluster$labels, lab.col=colors, hang=0.1)
 
 legend("topright", legend = c("Alzheimer's Disease", "No Cognitive Impairment"), col = c("red", "blue"), pch = 15, pt.cex = 1, cex = 0.7,  bty = "n")
-
-
 ```
 
 ```{r}
@@ -102,30 +90,15 @@ pca_data <- as.data.frame(pca$x)
 
 legend = c(rep(c("Alzheimer's Disease"), time = 13), rep(c("No Cognitive Impairment"), time = 10) )
 
-
 pca_data$labels = row.names(pca_data)
 ggplot(pca_data, aes(x= pca_data[,1], y= pca_data[,2], color = legend)) + geom_point() + geom_text_repel(aes(label = labels)) + labs(title = "PCA Plot of Samples", x = "PC1, Variance = 82.02%", y = "PC2, Variance = 15.99%") + scale_color_manual(values = c("red", "blue")) + theme_minimal()
 
-
 var = pca$sdev^2/sum(pca$sdev^2)
-
 PC1 = var[1]*100
 PC2 = var[2]*100
-
 cat("Percentage of variation explanation by PC1: ", PC1, "%\n")
 cat("Percentage of variation explanation by PC2: ", PC2, "%\n")
 ```
-
-
-
-
-
-
-
-
-
-
-
 
 #REMOVE EXPLORATORY OUTLIERS
 ```{r}
@@ -146,8 +119,6 @@ colors = c(rep(c("Alzheimer's Disease" = "red"), time = 9), rep(c("No Cognitive 
 myplclust(h_cluster, labels=h_cluster$labels, lab.col=colors, hang=0.1)
 
 legend("topright", legend = c("Alzheimer's Disease", "No Cognitive Impairment"), col = c("red", "blue"), pch = 15, pt.cex = 1, cex = 0.7,  bty = "n")
-
-
 ```
 
 ```{r}
@@ -158,10 +129,8 @@ pca_data <- as.data.frame(pca$x)
 
 legend = c(rep(c("Alzheimer's Disease"), time = 9), rep(c("No Cognitive Impairment"), time = 8) )
 
-
 pca_data$labels = row.names(pca_data)
 ggplot(pca_data, aes(x= pca_data[,1], y= pca_data[,2], color = legend)) + geom_point() + geom_text_repel(aes(label = labels)) + labs(title = "PCA Plot of Samples", x = "PC1", y = "PC2") + scale_color_manual(values = c("red", "blue")) + theme_minimal()
-
 
 var = pca$sdev^2/sum(pca$sdev^2)
 
@@ -173,27 +142,12 @@ cat("Percentage of variation explanation by PC2: ", PC2, "%\n")
 ```
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ```{r}
 knitr::opts_chunk$set(echo = TRUE)
-
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install(c("airway", "DESeq2", "vsn", "org.Hs.eg.db"))
 ```
-
 
 ```{r}
 library(DESeq2)
@@ -211,13 +165,7 @@ ggplot(df) +
         scale_y_log10(limits = c(1,1e9)) +
         scale_x_log10(limits = c(1,1e9)) +
         geom_abline(intercept = 0, slope = 1, color="blue")
-
 ```
-
-
-
-
-
 
 ```{r}
 
@@ -235,30 +183,22 @@ colnames(coldata) <- c( "","condition","type")
 countdata = gene_no_out[,2:24]
 row.names(countdata) <- c(gene_no_out[,1])
 
-
 dds <- DESeqDataSetFromMatrix(countData = round(countdata), colData = coldata, design = ~ condition)
 dds <- DESeq(dds)
 res <- results(dds)
 resultsNames(dds)
-
-
 
 res = results(dds, name = "condition_No.Cognitive.Impairment_vs_Alzheimer.s.Disease")
 sum(res$padj < 1, na.rm = TRUE)
 sum(res$padj < 0.75, na.rm = TRUE)
 sum(res$padj < 0.6011, na.rm = TRUE)
 
-
 plotMA(res, res$padj<0.6011, ylim=c(-4,4))
-
 plotMA(res, res$padj<0.75,ylim=c(-4,4))
-
 ```
+
 ```{r}
-
-
 library(installr)
-
 gene_exp <- read.table("C:/Users/student/Downloads/gene_matrix (3).txt", header=TRUE)
 gene_exp = gene_exp[,c(1,7,8,9,10,11,12,13,14,15,2,3,4,5,6,19,20,21,22,23,24,25,26,27,16,17,18)]
 gene_all_out = gene_exp #[,-c(5,6,7,8,14,17,18,21,24)]
