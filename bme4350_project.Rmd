@@ -1,0 +1,313 @@
+---
+title: "bme4350_project"
+author: "Josiah Calhoun"
+date: "2023-11-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(biomaRt)
+```
+
+```{r}
+tpm <- read.table("C:/Users/student/Downloads/tpm (2).txt", header=TRUE)
+tpm = tpm[,c(1,7,8,9,10,11,12,13,14,15,2,3,4,5,6,19,20,21,22,23,24,25,26,27,16,17,18)]
+
+
+mart = useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
+hgnc_symbols = getBM(filters= "ensembl_gene_id_version", attributes= c("ensembl_gene_id_version","hgnc_symbol"),values=tpm$geneID,mart= mart)
+duplicates = duplicated(hgnc_symbols[,1])
+duplicates = as.data.frame(duplicates)
+
+hgnc_symbols = hgnc_symbols[-which(duplicates$duplicates==TRUE),]
+tpm = merge(tpm, hgnc_symbols, by.x="geneID", by.y="ensembl_gene_id_version", all=TRUE)
+
+tpm1 <- tpm[-which(tpm[,c(2:27)]  ==  0), ]
+
+
+```
+
+
+```{r}
+library(rafalib)
+data <- as.data.frame(t(tpm1[2:27]))
+h_cluster <- hclust(dist(scale(data), method = "euclidean"))
+colors = c(rep(c("Alzheimer's Disease" = "red"), time = 14), rep(c("No Cognitive Impairment" = "blue"), time = 12) )
+myplclust(h_cluster, labels=h_cluster$labels, lab.col=colors, hang=0.1)
+
+
+legend("bottomright", legend = c("Alzheimer's Disease", "No Cognitive Impairment"), col = c("red", "blue"), pch = 15, pt.cex = 1, cex = 0.7,  bty = "n")
+
+```
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+data <- as.data.frame(t(tpm1[2:27]))
+pca <- prcomp(data[1:26], scale=FALSE)
+pca_data <- as.data.frame(pca$x)
+pca_data$labels = row.names(pca_data)
+
+legend = c(rep(c("Alzheimer's Disease"), time = 14), rep(c("No Cognitive Impairment"), time = 12) )
+ggplot(pca_data, aes(x= pca_data[,1], y= pca_data[,2], color = legend)) + geom_point() + geom_text_repel(aes(label = labels)) + labs(title = "PCA Plot of Samples", x = "PC1, Variance = 71.59%", y = "PC2, Variance = 14.03%") + scale_color_manual(values = c("red", "blue")) + theme_minimal()
+
+var = pca$sdev^2/sum(pca$sdev^2)
+
+PC1 = var[1]*100
+PC2 = var[2]*100
+
+cat("Percentage of variation explanation by PC1: ", PC1, "%\n")
+cat("Percentage of variation explanation by PC2: ", PC2, "%\n")
+```
+
+
+
+
+
+
+
+
+#REMOVE NUMERICAL OUTLIERS
+```{r}
+
+tpm_no_outlier = tpm1[,-c(8,17,24)]
+
+```
+
+
+```{r}
+library(rafalib)
+data <- as.data.frame(t(tpm_no_outlier[2:24]))
+h_cluster <- hclust(dist(scale(data), method = "euclidean"))
+colors = c(rep(c("Alzheimer's Disease" = "red"), time = 13), rep(c("No Cognitive Impairment" = "blue"), time = 10) )
+myplclust(h_cluster, labels=h_cluster$labels, lab.col=colors, hang=0.1)
+
+legend("topright", legend = c("Alzheimer's Disease", "No Cognitive Impairment"), col = c("red", "blue"), pch = 15, pt.cex = 1, cex = 0.7,  bty = "n")
+
+
+```
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+
+data <- as.data.frame(t(tpm_no_outlier[2:24]))
+pca <- prcomp(data[1:23], scale=FALSE)
+pca_data <- as.data.frame(pca$x)
+
+legend = c(rep(c("Alzheimer's Disease"), time = 13), rep(c("No Cognitive Impairment"), time = 10) )
+
+
+pca_data$labels = row.names(pca_data)
+ggplot(pca_data, aes(x= pca_data[,1], y= pca_data[,2], color = legend)) + geom_point() + geom_text_repel(aes(label = labels)) + labs(title = "PCA Plot of Samples", x = "PC1, Variance = 82.02%", y = "PC2, Variance = 15.99%") + scale_color_manual(values = c("red", "blue")) + theme_minimal()
+
+
+var = pca$sdev^2/sum(pca$sdev^2)
+
+PC1 = var[1]*100
+PC2 = var[2]*100
+
+cat("Percentage of variation explanation by PC1: ", PC1, "%\n")
+cat("Percentage of variation explanation by PC2: ", PC2, "%\n")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+#REMOVE EXPLORATORY OUTLIERS
+```{r}
+
+
+tpm_all_outlier = tpm1[,-c(5,6,7,8,14,17,18,21,24)]
+#AD7, NAD 2 9
+#AD4, AD5, AD6, AD7, AD13, NAD2, NAD3, NAD6, NAD9
+#5,6,7,8,14,17,18,21,24
+```
+
+
+```{r}
+library(rafalib)
+data <- as.data.frame(t(tpm_all_outlier[2:18]))
+h_cluster <- hclust(dist(scale(data), method = "euclidean"))
+colors = c(rep(c("Alzheimer's Disease" = "red"), time = 9), rep(c("No Cognitive Impairment" = "blue"), time = 8) )
+myplclust(h_cluster, labels=h_cluster$labels, lab.col=colors, hang=0.1)
+
+legend("topright", legend = c("Alzheimer's Disease", "No Cognitive Impairment"), col = c("red", "blue"), pch = 15, pt.cex = 1, cex = 0.7,  bty = "n")
+
+
+```
+
+```{r}
+library(ggplot2)
+data <- as.data.frame(t(tpm_all_outlier[2:18]))
+pca <- prcomp(data[1:17], scale=FALSE)
+pca_data <- as.data.frame(pca$x)
+
+legend = c(rep(c("Alzheimer's Disease"), time = 9), rep(c("No Cognitive Impairment"), time = 8) )
+
+
+pca_data$labels = row.names(pca_data)
+ggplot(pca_data, aes(x= pca_data[,1], y= pca_data[,2], color = legend)) + geom_point() + geom_text_repel(aes(label = labels)) + labs(title = "PCA Plot of Samples", x = "PC1", y = "PC2") + scale_color_manual(values = c("red", "blue")) + theme_minimal()
+
+
+var = pca$sdev^2/sum(pca$sdev^2)
+
+PC1 = var[1]*100
+PC2 = var[2]*100
+
+cat("Percentage of variation explanation by PC1: ", PC1, "%\n")
+cat("Percentage of variation explanation by PC2: ", PC2, "%\n")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(c("airway", "DESeq2", "vsn", "org.Hs.eg.db"))
+```
+
+
+```{r}
+library(DESeq2)
+
+gene_exp <- read.table("C:/Users/student/Downloads/gene_matrix (3).txt", header=TRUE)
+gene_exp = gene_exp[,c(1,7,8,9,10,11,12,13,14,15,2,3,4,5,6,19,20,21,22,23,24,25,26,27,16,17,18)]
+gene_no_out = gene_exp[,-c(8,17,24)]
+
+library(ggplot2)
+mean_counts <- apply(gene_no_out[2:24], 1, mean)        
+variance_counts <- apply(gene_no_out[2:24], 1, var)
+df <- data.frame(mean_counts, variance_counts)
+ggplot(df) +
+        geom_point(aes(x=mean_counts, y=variance_counts)) + 
+        scale_y_log10(limits = c(1,1e9)) +
+        scale_x_log10(limits = c(1,1e9)) +
+        geom_abline(intercept = 0, slope = 1, color="blue")
+
+```
+
+
+
+
+
+
+```{r}
+
+library(installr)
+
+gene_exp <- read.table("C:/Users/student/Downloads/gene_matrix (3).txt", header=TRUE)
+gene_exp = gene_exp[,c(1,7,8,9,10,11,12,13,14,15,2,3,4,5,6,19,20,21,22,23,24,25,26,27,16,17,18)]
+gene_no_out = gene_exp [,-c(8,17,24)]
+
+condition = as.data.frame(c(rep(c("Alzheimer's Disease"),times=13), rep(c("No Cognitive Impairment"),times=10)))
+type = as.data.frame(rep(c("single-read"), times = 23))
+rcolnames = as.data.frame(c(colnames(gene_no_out[2:24])))
+coldata <- as.data.frame(c(rcolnames,c(condition,type)))
+colnames(coldata) <- c( "","condition","type")
+countdata = gene_no_out[,2:24]
+row.names(countdata) <- c(gene_no_out[,1])
+
+
+dds <- DESeqDataSetFromMatrix(countData = round(countdata), colData = coldata, design = ~ condition)
+dds <- DESeq(dds)
+res <- results(dds)
+resultsNames(dds)
+
+
+
+res = results(dds, name = "condition_No.Cognitive.Impairment_vs_Alzheimer.s.Disease")
+sum(res$padj < 1, na.rm = TRUE)
+sum(res$padj < 0.75, na.rm = TRUE)
+sum(res$padj < 0.6011, na.rm = TRUE)
+
+
+plotMA(res, res$padj<0.6011, ylim=c(-4,4))
+
+plotMA(res, res$padj<0.75,ylim=c(-4,4))
+
+```
+```{r}
+
+
+library(installr)
+
+gene_exp <- read.table("C:/Users/student/Downloads/gene_matrix (3).txt", header=TRUE)
+gene_exp = gene_exp[,c(1,7,8,9,10,11,12,13,14,15,2,3,4,5,6,19,20,21,22,23,24,25,26,27,16,17,18)]
+gene_all_out = gene_exp #[,-c(5,6,7,8,14,17,18,21,24)]
+
+condition = as.data.frame(c(rep(c("Alzheimer's Disease"),times=14), rep(c("No Cognitive Impairment"),times=12)))
+type = as.data.frame(rep(c("single-read"), times = 26))
+rcolnames = as.data.frame(c(colnames(gene_all_out[2:27])))
+coldata <- as.data.frame(c(rcolnames,c(condition,type)))
+colnames(coldata) <- c( "","condition","type")
+countdata = gene_all_out[,2:27]
+row.names(countdata) <- c(gene_all_out[,1])
+
+
+dds <- DESeqDataSetFromMatrix(countData = round(countdata), colData = coldata, design = ~ condition)
+dds <- DESeq(dds)
+res <- results(dds)
+resultsNames(dds)
+
+
+
+res = results(dds, name = "condition_No.Cognitive.Impairment_vs_Alzheimer.s.Disease")
+sum(res$padj < 1, na.rm = TRUE)
+sum(res$padj < 0.1, na.rm = TRUE)
+sum(res$padj < 0.05, na.rm = TRUE)
+
+
+
+plotMA(res, res$padj<0.05, ylim=c(-4,4))
+
+plotMA(res, res$padj<0.9993,ylim=c(-4,4))
+
+
+
+
+
+
+```
+
+
+
+
+
+```{r}
+
+library(pheatmap)
+
+top50 = head(order(res$padj), 10)
+normalized_counts = assay(rlog(dds))
+normalized_counts = normalized_counts - rowMeans(normalized_counts)
+
+pheatmap(normalized_counts[top50, ])
+```
+
+
+
+
